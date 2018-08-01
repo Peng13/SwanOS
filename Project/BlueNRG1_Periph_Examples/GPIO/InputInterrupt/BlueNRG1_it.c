@@ -81,12 +81,91 @@ void SVC_Handler(void)
 
 
 /**
+* @brief  This function handles PendSV exception.
+*/
+/* Modified by tianpeng for SwanOS switch context at 20180801 begin */
+typedef void (*pFUNC)(void*);
+typedef struct task_control_block
+{
+	uint32_t *p_stk;
+	uint32_t delay_cnt;
+	uint8_t  state; /* 0:sleep, 1: delay, 2: ready, 3: running */
+	uint8_t  id;
+	uint32_t *next;
+} TCB, *pTCB;
+extern pTCB os_cur_task, os_next_task;
+
+__asm void PendSV_Handler(void)
+{
+	IMPORT os_cur_task
+	IMPORT os_next_task
+	LDR  R3, =os_cur_task
+	LDR  R1, [R3]
+	LDR  R2, =os_next_task
+	LDR  R2, [R2]
+	
+	CMP  R1, R2
+	BEQ  exitPendSV						;/* if os_cur_task == os_next_task, don't need to schedule, exit. */
+	MRS  R0, PSP
+	
+	SUBS R0, R0, #32
+	STR  R0, [R1]
+	
+	STMIA R0!, {R4-R7}
+	MOV   R4, R8
+	MOV   R5, R9
+	MOV   R6, R10
+	MOV   R7, R11
+	STMIA R0!, {R4-R7}
+	
+popStk
+	STR R2, [R3]							;/* set os_cur_task = os_next_task */
+	LDR R0, [R2]
+	
+	ADDS  R0, R0, #16
+	LDMIA R0!, {R4-R7}
+	MOV   R8, R4
+	MOV   R9, R5
+	MOV   R10, R6
+	MOV   R11, R7
+	SUBS  R0, R0, #32
+	LDMIA R0!, {R4-R7}
+	ADDS  R0, R0, #16
+	MSR   PSP, R0							;/* Set PSP reg point to new task stack. */
+	
+exitPendSV
+	MOVS R0, #4								;/* Ensure exception return to thread mode and use PSP. */
+	RSBS R0, #0
+	BX  R0
+	ALIGN
+}
+/* Modified by tianpeng for SwanOS switch context at 20180801 end */
+
+/**
 * @brief  This function handles SysTick Handler.
 */
+/* Modified by tianpeng for SwanOS generate systicks every 10ms and schedule tasks at 20180801 begin */
+extern uint32_t os_tick_cnt;
+extern uint8_t os_poll_tsk_state(void);
+extern void os_append_task(pTCB *list, pTCB task);
+extern void os_update_task_delay(void);
+extern void os_poll_task(void);
+extern void os_schedule(void);
+extern TCB os_tsk_tbl[3];
+extern pTCB os_ready_task_header;
+extern pTCB os_delay_task_header;
 void SysTick_Handler(void)
 {
+	os_tick_cnt++;
+	if (os_cur_task->id != 0) {
+		os_append_task(&os_ready_task_header, &os_tsk_tbl[os_cur_task->id]);
+	}
+	os_update_task_delay();
+	os_poll_task();
+	
+	os_schedule();
 }
-
+/* Modified by tianpeng for SwanOS generate systicks every 10ms and schedule tasks at 20180801 end */
 /******************************************************************************/
 /*                 BlueNRG-1 Peripherals Interrupt Handlers                   */
 /*  Add here the Interrupt Handler for the used peripheral(s) (PPP), for the  */
@@ -99,29 +178,24 @@ void SysTick_Handler(void)
 * @param  None
 * @retval None
 */
+/* Modified by tianpeng for SwanOS mark button event at 20180801 begin */
+extern TCB os_tsk_tbl[3];
 void GPIO_Handler(void)
 {
+	extern uint8_t btn1_press_flag, btn2_press_flag;
   /* If BUTTON_1 is pressed LED1 is ON */
   if(GPIO_GetITPendingBit(Get_ButtonGpioPin(BUTTON_1)) == SET) {
     GPIO_ClearITPendingBit(Get_ButtonGpioPin(BUTTON_1));
-    
-    if(GPIO_ReadBit(Get_ButtonGpioPin(BUTTON_1)) == Bit_RESET) {
-      GPIO_WriteBit(Get_LedGpioPin(LED1), LED_ON);
-    }
-    else {
-      GPIO_WriteBit(Get_LedGpioPin(LED1), LED_OFF);
-    }
-    
+    btn1_press_flag = 1;
   }
 
   /* If BUTTON_2 is pressed LED2 is toggled */
   if(GPIO_GetITPendingBit(Get_ButtonGpioPin(BUTTON_2)) == SET) {
     GPIO_ClearITPendingBit(Get_ButtonGpioPin(BUTTON_2));
-    
-    GPIO_ToggleBits(Get_LedGpioPin(LED2));
+    btn2_press_flag = 1;
   }
 }
-
+/* Modified by tianpeng for SwanOS mark button event at 20180801 end */
 /**
 * @}
 */ 

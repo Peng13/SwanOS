@@ -650,25 +650,26 @@ void SystemInit(void)
   * The application can modify the interrupts priority.
   * The  PendSV_IRQn and BLUE_CTRL_IRQn SHALL maintain the highest priority
   */
+/* Modified by tianpeng for SwanOS that I want to give SysTick a high and PendSV a low priority at 20180801 begin */
   NVIC_SetPriority(PendSV_IRQn,    LOW_PRIORITY);
-  NVIC_SetPriority(SysTick_IRQn,   LOW_PRIORITY);
-  NVIC_SetPriority(GPIO_IRQn,      LOW_PRIORITY);
-  NVIC_SetPriority(NVM_IRQn,       LOW_PRIORITY);
-  NVIC_SetPriority(UART_IRQn,      LOW_PRIORITY);
-  NVIC_SetPriority(SPI_IRQn,       LOW_PRIORITY);
+  NVIC_SetPriority(SysTick_IRQn,   HIGH_PRIORITY);
+  NVIC_SetPriority(GPIO_IRQn,      MED_PRIORITY);
+  NVIC_SetPriority(NVM_IRQn,       MED_PRIORITY);
+  NVIC_SetPriority(UART_IRQn,      MED_PRIORITY);
+  NVIC_SetPriority(SPI_IRQn,       MED_PRIORITY);
   NVIC_SetPriority(BLUE_CTRL_IRQn, CRITICAL_PRIORITY);
-  NVIC_SetPriority(WDG_IRQn,       LOW_PRIORITY);
-  NVIC_SetPriority(ADC_IRQn,       LOW_PRIORITY);
-  NVIC_SetPriority(I2C2_IRQn,      LOW_PRIORITY);
-  NVIC_SetPriority(I2C1_IRQn,      LOW_PRIORITY);
-  NVIC_SetPriority(MFT1A_IRQn,    LOW_PRIORITY);
-  NVIC_SetPriority(MFT1B_IRQn,    LOW_PRIORITY);
-  NVIC_SetPriority(MFT2A_IRQn,    LOW_PRIORITY);
-  NVIC_SetPriority(MFT2B_IRQn,    LOW_PRIORITY);
-  NVIC_SetPriority(RTC_IRQn,       LOW_PRIORITY);
-  NVIC_SetPriority(PKA_IRQn,       LOW_PRIORITY);
-  NVIC_SetPriority(DMA_IRQn,       LOW_PRIORITY);
-
+  NVIC_SetPriority(WDG_IRQn,       MED_PRIORITY);
+  NVIC_SetPriority(ADC_IRQn,       MED_PRIORITY);
+  NVIC_SetPriority(I2C2_IRQn,      MED_PRIORITY);
+  NVIC_SetPriority(I2C1_IRQn,      MED_PRIORITY);
+  NVIC_SetPriority(MFT1A_IRQn,    MED_PRIORITY);
+  NVIC_SetPriority(MFT1B_IRQn,    MED_PRIORITY);
+  NVIC_SetPriority(MFT2A_IRQn,    MED_PRIORITY);
+  NVIC_SetPriority(MFT2B_IRQn,    MED_PRIORITY);
+  NVIC_SetPriority(RTC_IRQn,       MED_PRIORITY);
+  NVIC_SetPriority(PKA_IRQn,       MED_PRIORITY);
+  NVIC_SetPriority(DMA_IRQn,       MED_PRIORITY);
+/* Modified by tianpeng for SwanOS that I want to give SysTick a high and PendSV a low priority at 20180801 end */
   /* Device Configuration */
   DeviceConfiguration(TRUE, TRUE);
   /* Disable all the peripherals clock except NVM, SYSCTR, PKA and RNG */
